@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/darker_gray"
+    android:id="@+id/rlay"
+    tools:context="com.vanessaodawo.r_client.MainActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/childrlay">
+
+        <ImageView
+            android:id="@+id/iv"
+            android:layout_width="300dp"
+            android:layout_height="200dp"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="91dp"
+            tools:ignore="ContentDescription" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/childrlay2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:background="@android:color/darker_gray">
+
+        <TextView
+            android:id="@+id/logo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="50dp"
+            android:text="DODO APP : RIDER" />
+
+        <FrameLayout
+            android:id="@+id/frameLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="20dp" />
+
+        <EditText
+            android:id="@+id/phone"
+            android:layout_width="300dp"
+            android:layout_height="40dp"
+            android:layout_centerInParent="true"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/button_border"
+            android:gravity="center"
+            android:hint="phone number (+234)"
+            android:inputType="phone"
+            android:textColor="@android:color/white"
+            android:maxLength="13"/>
+
+        <ImageButton
+            android:id="@+id/sendCode"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_centerInParent="true"
+            android:layout_marginRight="50dp"
+            android:layout_below="@id/phone"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/ic_check_circle_black_24dp" />
+
+        <TextView
+            android:id="@+id/whyPhone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/phone"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="50dp"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:text="why phone number?"
+            android:textSize="16sp"/>
+
+        <LinearLayout
+            android:id="@+id/viewdiv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/whyPhone"
+            android:layout_centerInParent="true"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
+
+            <!--<view-->
+            <!--android:layout_width="50dp"-->
+            <!--android:layout_height="2dp"-->
+            <!--android:layout_marginTop="7dp"/>-->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:text="OR"
+                android:textSize="20sp"/>
+
+            <!--<view-->
+            <!--android:layout_width="50dp"-->
+            <!--android:layout_height="2dp"-->
+            <!--android:layout_marginTop="7dp"-->
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/emailSignIn"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/viewdiv"
+            android:layout_centerInParent="true"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/button_border"
+            android:text="Sign in with Email"
+            android:textColor="@android:color/white" />
+
+        <!--<RelativeLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_below="@+id/emailSignUp"-->
+        <!--android:layout_marginTop="30dp">-->
+
+        <!--<TextView-->
+        <!--android:id="@+id/lbl"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_alignParentTop="true"-->
+        <!--android:layout_marginLeft="71dp"-->
+        <!--android:layout_marginStart="71dp"-->
+        <!--android:text="ALREADY HAVE AN ACCOUNT?  " />-->
+
+        <!--<TextView-->
+        <!--android:id="@+id/tvLogin"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="LOGIN."-->
+        <!--android:layout_toRightOf="@+id/lbl"-->
+        <!--android:clickable="true"-->
+        <!--android:textColor="@android:color/white"/>-->
+
+        <!--</RelativeLayout>-->
+
+
+    </RelativeLayout>
+
+
+</RelativeLayout>
