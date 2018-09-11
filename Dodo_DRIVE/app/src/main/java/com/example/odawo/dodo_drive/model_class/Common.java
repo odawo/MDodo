@@ -1,5 +1,7 @@
 package com.example.odawo.dodo_drive.model_class;
 
+import android.location.Location;
+
 public class Common {
 
     public static final String DRIVER_TB = "Cab_Driver"; //userdriver
@@ -8,7 +10,7 @@ public class Common {
     public static final String PICKUPREQUEST_TB = "PickUpRequest";
     public static final String TOKEN_TB = "Tokens";
 
-//    public static Location mLastLocation = null;
+    public static Location mLastLocation = null;
 
     public static User currentUser;
 

@@ -1,8 +1,10 @@
 package com.example.odawo.dodo_drive;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +13,12 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.odawo.dodo_drive.model_class.Common;
+import com.example.odawo.dodo_drive.model_class.User;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -62,20 +70,65 @@ public class Registration extends Fragment {
         View view = inflater.inflate(R.layout.fragment_registration, container, false);
 
         final EditText ed_fn = view.findViewById(R.id.regfirstName);
-        EditText ed_ln = view.findViewById(R.id.reglastName);
-        EditText ed_em = view.findViewById(R.id.regemail);
-        EditText ed_pwd = view.findViewById(R.id.regpassword);
-        EditText ed_tel = view.findViewById(R.id.regtelephone);
+        final EditText ed_ln = view.findViewById(R.id.reglastName);
+        final EditText ed_em = view.findViewById(R.id.regemail);
+        final EditText ed_pwd = view.findViewById(R.id.regpassword);
+        final EditText ed_tel = view.findViewById(R.id.regtelephone);
 
-        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
+        final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
         FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-        DatabaseReference userDB = firebaseDatabase.getReference(Common.DRIVERINFO_TB);
+        final DatabaseReference userDB = firebaseDatabase.getReference(Common.DRIVERINFO_TB);
 
         view.findViewById(R.id.registerBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                if (ed_fn.)
+                if (ed_fn.getText().toString().isEmpty() ||ed_em.getText().toString().isEmpty() ||
+                        ed_pwd.getText().toString().isEmpty() || ed_tel.getText().toString().isEmpty()) {
+                    ed_fn.setError("empty!");
+                    ed_ln.setError("empty!");
+                    ed_em.setError("empty!");
+                    ed_pwd.setError("empty");
+                    ed_tel.setError("empty!");
+
+                    return;
+
+                } else if (ed_pwd.length() < 5) {
+
+                    ed_pwd.setError("Requires a minimum of 6 values");
+                    ed_pwd.setFocusable(true);
+                    return;
+
+                } else {
+                    firebaseAuth.createUserWithEmailAndPassword(ed_em.getText().toString().trim(), ed_pwd.getText().toString().trim()).
+                            addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                        @Override
+                        public void onSuccess(AuthResult authResult) {
+                            User user = new User();
+                            user.setName(ed_fn.getText().toString());
+                            user.setEmail(ed_fn.getText().toString());
+                            user.setPhone(ed_fn.getText().toString());
+
+                            userDB.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(user).addOnCompleteListener(
+                                    new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    startActivity(new Intent(getActivity(), HomeMap.class));
+                                }
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Toast.makeText(getActivity(), "failed : " + e.toString(), Toast.LENGTH_LONG).show();
+                                }
+                            });
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(getActivity(), "failed : " + e.toString(), Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
             }
         });
 
