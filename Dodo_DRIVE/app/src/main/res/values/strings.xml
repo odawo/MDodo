@@ -3,12 +3,14 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="title_activity_maps">Map</string>
-    <string name="title_activity_home_map">HomeMap</string>
+    <!--<string name="title_activity_maps">Map</string>-->
+    <string name="title_activity_home_map">Dodor</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Android Studio</string>
-    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_title">Dodor</string>
+    <string name="nav_header_subtitle">dodortechnologies@gmail.com</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
+    <string name="find_client">find client</string>
+    <string name="google_direction_api">AIzaSyCtaQRd4-C0T_B004BCLahMuqSazQea3DU</string>
 </resources>

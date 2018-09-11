@@ -3,17 +3,23 @@ package com.example.odawo.dodo_drive;
 //import android.location.Location;
 import android.Manifest;
 import android.animation.ValueAnimator;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.media.session.MediaSession;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -31,6 +37,7 @@ import android.widget.Switch;
 import android.widget.Toast;
 
 import com.example.odawo.dodo_drive.model_class.Common;
+import com.example.odawo.dodo_drive.remote.IGoogleAPI;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.google.android.gms.common.ConnectionResult;
@@ -49,6 +56,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.JointType;
@@ -75,6 +83,9 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+
 public class HomeMap extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback,
 GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener{
@@ -99,20 +110,22 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
     private static final int PLAY_SERVICE_RES_REQUEST = 7001;
     private static int UPDATE_INTERVAL = 5000;
     private static int FASTEST_INTERVAL = 3000;
-    private static int DISPLACEMENT = 3000;
+    private static int DISPLACEMENT = 100;
 
     //    car animation
     private List<LatLng> polyLineList;
     private Marker carMarker;
     private float v;
     private double lat, lng;
-    private android.os.Handler handler;
+    private Handler handler;
     private LatLng startPosition, endPosition, currentPosition;
     private int index, next;
     private PlaceAutocompleteFragment places;
     private String destination;
     private PolylineOptions polylineOptions, blackPolylineOptions;
     private Polyline blackPolyline, greyPolyline;
+
+    private IGoogleAPI mService;
 
 
     Runnable drawPathRunnable = new Runnable() {
@@ -148,11 +161,10 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
                 }
             });
             valueAnimator.start();
-            handler.postDelayed(this, 1000);
+            handler.postDelayed(this, 2000);
         }
     };
 
-//    from the runnable method
     private float getBearing(LatLng startPosition, LatLng newPos) {
         double lat = Math.abs(startPosition.latitude - endPosition.latitude);
         double lng = Math.abs(startPosition.longitude - endPosition.longitude);
@@ -179,14 +191,14 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 //        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 //        setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+//            }
+//        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -234,7 +246,7 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 
                     startLocationUpdate();
                     displayLocation();
-                    Snackbar.make(mapFragment.getView(), "You are online", Snackbar.LENGTH_SHORT).show();
+                    Snackbar.make(mapFragment.getView(), "online", Snackbar.LENGTH_SHORT).show();
                 } else {
 //                    sets to offline when switch is off
                     FirebaseDatabase.getInstance().goOffline();
@@ -243,7 +255,7 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
                     mCurrent.remove();
                     mMap.clear();
                     handler.removeCallbacks(drawPathRunnable);
-                    Snackbar.make(mapFragment.getView(), "You are offline", Snackbar.LENGTH_SHORT).show();
+                    Snackbar.make(mapFragment.getView(), "offline", Snackbar.LENGTH_SHORT).show();
                 }
             }
         });
@@ -253,8 +265,6 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         polyLineList = new ArrayList<>();
 
 
-
-
 //        places API
         places = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
         places.setOnPlaceSelectedListener(new PlaceSelectionListener() {
@@ -262,11 +272,11 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
             public void onPlaceSelected(Place place) {
                 if (location_switch.isChecked()) {
                     destination = place.getAddress().toString();
-                    destination = destination.replace(" ", "+");
+                    destination = destination.replace(" ", "+"); //+ for fetch data
 
                     getDirection();
                 } else {
-                    Toast.makeText(HomeMap.this, "You are offline. Kindly switch to online.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(HomeMap.this, "Switch your status to ONLINE.", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -278,26 +288,26 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 
 
         //        Geofire
-        ambdrivers = FirebaseDatabase.getInstance().getReference(Common.DRIVER_TB);
-        geoFire = new GeoFire(ambdrivers);
+        driverRef = FirebaseDatabase.getInstance().getReference(Common.DRIVER_TB);
+        geoFire = new GeoFire(driverRef);
 
         setLocation();
 
         mService = Common.getGoogleAPI();
 
-        updateFirebaseToken();
+//        updateFirebaseToken();
 
     }
 
-    private void updateFirebaseToken() {
-        FirebaseDatabase db = FirebaseDatabase.getInstance();
-        DatabaseReference tokens = db.getReference(Common.TOKEN_TB);
-
-        Token token = new Token(FirebaseInstanceId.getInstance().getToken());
-//        if already logged in, token must be updated
-        tokens.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(token);
-
-    }
+//    private void updateFirebaseToken() {
+//        FirebaseDatabase db = FirebaseDatabase.getInstance();
+//        DatabaseReference tokens = db.getReference(Common.TOKEN_TB);
+//
+//        Token token = new Token(FirebaseInstanceId.getInstance().getToken());
+////        if already logged in, token must be updated
+//        tokens.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(token);
+//
+//    }
 
     private void getDirection() {
         currentPosition = new LatLng(Common.mLastLocation.getLatitude(), Common.mLastLocation.getLongitude());
@@ -311,10 +321,11 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
                     "&"+"destination"+destination+"&"+"key="+getResources().getString(R.string.google_direction_api);
 
             //print url for debug
-            Log.d("eTika", requestApi);
+            Log.d("Dodor Rides", requestApi);
+
             mService.getPath(requestApi).enqueue(new Callback<String>() {
                 @Override
-                public void onResponse(Call<String> call, Response<String> response) {
+                public void onResponse(Call<String> call, retrofit2.Response<String> response) {
                     try {
 //                        Log.i("location", String.valueOf(response));
                         JSONObject jsonObject = new JSONObject(response.body().toString());
@@ -326,7 +337,7 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
                             polyLineList = decodePoly(polyline);
                         }
 
-//                        adjusting bounds
+                        //adjusting bounds
                         LatLngBounds.Builder builder = new LatLngBounds.Builder();
                         for (LatLng latLng:polyLineList)
                             builder.include(latLng);
@@ -335,7 +346,7 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
                         mMap.animateCamera(mCameraUpdate);
 
                         polylineOptions = new PolylineOptions() ;
-                        polylineOptions.color(Color.GRAY);
+                        polylineOptions.color(R.color.blueCde); //gray
                         polylineOptions.width(5);
                         polylineOptions.startCap(new SquareCap());
                         polylineOptions.endCap(new SquareCap());
@@ -351,9 +362,9 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
                         blackPolylineOptions.jointType(JointType.ROUND);
                         blackPolyline = mMap.addPolyline(blackPolylineOptions);
 
-                        mMap.addMarker(new MarkerOptions().position(polyLineList.get(polyLineList.size() - 1)).title("Patient Location"));
+                        mMap.addMarker(new MarkerOptions().position(polyLineList.get(polyLineList.size() - 1)).title("Client"));
 
-//                        animation
+                        //animation
                         ValueAnimator polyLineAnimator = ValueAnimator.ofInt(0,100);
                         polyLineAnimator.setDuration(2000); //2 seconds
                         polyLineAnimator.setInterpolator(new LinearInterpolator());
@@ -371,7 +382,8 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 
                         polyLineAnimator.start();
 
-                        carMarker = mMap.addMarker(new MarkerOptions().position(currentPosition).flat(true).icon(BitmapDescriptorFactory.fromResource(R.drawable.ambicon)));
+                        carMarker = mMap.addMarker(new MarkerOptions().position(currentPosition).flat(true).
+                                icon(bitmapDescriptorFromVector(getBaseContext(), R.drawable.ic_directions_car_black_24dp)));
 
                         handler = new android.os.Handler();
                         index = -1;
@@ -381,11 +393,12 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
+
                 }
 
                 @Override
                 public void onFailure(Call<String> call, Throwable t) {
-                    Toast.makeText(HomeMap.this, ""+t.getMessage(), Toast.LENGTH_SHORT).show();
+
                 }
             });
 
@@ -453,7 +466,7 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-//            repeat runtime permission
+//            request runtime permission
             ActivityCompat.requestPermissions(this, new String[]{
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION
@@ -463,7 +476,9 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
             if (checkPlayServices()) {
                 buildGoogleApiClient();
                 createLocationRequest();
-                if (location_switch.isChecked()) displayLocation();
+                if (location_switch.isChecked()) {
+                    displayLocation();
+                }
             }
         }
 
@@ -492,13 +507,22 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
             if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)){
                 GooglePlayServicesUtil.getErrorDialog(resultCode, this, PLAY_SERVICE_RES_REQUEST).show();
             } else {
-                Toast.makeText(this, "Device not supported", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Your device not supported.", Toast.LENGTH_SHORT).show();
                 finish();
             }
             return false;
         }
         return true;
     }
+
+    private void stopLocationUpdate() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+    }
+
 
     private void startLocationUpdate() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
@@ -532,11 +556,11 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
                             mCurrent.remove();
 
                         mCurrent = mMap.addMarker(new MarkerOptions()
-//                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ambicon))
+                                    .icon(bitmapDescriptorFromVector(getBaseContext(), R.drawable.ic_directions_car_black_24dp))
                                 .position(new LatLng(latitude, longitude))
-                                .title("Your Location"));
-                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 15.0f));
-//                        draw rotatemarker animation
+                                .title("You"));
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 17.0f));
+                       // draw rotatemarker animation
                         rotateMarker(mCurrent, -360, mMap);
 
                     }
@@ -550,9 +574,17 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 
     }
 
+    private BitmapDescriptor bitmapDescriptorFromVector(Context context, int vectorResId) {
+        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorResId);
+        vectorDrawable.setBounds(0, 0, vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight());
+        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.draw(canvas);
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
+
     private void rotateMarker(final Marker mCurrent, final float i, GoogleMap mMap) {
-//        Handler handler = new Handler();
-        final android.os.Handler handler = new android.os.Handler();
+        final Handler handler = new Handler();
         final long start = SystemClock.uptimeMillis();
         final float startRotation = mCurrent.getRotation();
         final long duration = 1500;
@@ -576,13 +608,6 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 
     }
 
-    private void stopLocationUpdate() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-    }
 
     @Override
     public void onBackPressed() {
@@ -645,21 +670,6 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
     public void onLocationChanged(Location location) {
         Common.mLastLocation = location;
         displayLocation();
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
     }
 
     @Override
